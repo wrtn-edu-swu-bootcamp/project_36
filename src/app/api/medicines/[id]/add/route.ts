@@ -3,6 +3,21 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
+// 상호작용 타입 한글 변환
+const interactionTypeLabels: Record<string, string> = {
+  EFFECT_INCREASE: '효과 증가',
+  EFFECT_DECREASE: '효과 감소',
+  SIDE_EFFECT_INCREASE: '부작용 증가',
+  ABSORPTION_CHANGE: '흡수율 변화',
+};
+
+// 심각도 레벨 한글 변환
+const severityLabels: Record<string, string> = {
+  MILD: '참고',
+  MODERATE: '주의',
+  SEVERE: '경고',
+};
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -60,6 +75,87 @@ export async function POST(
       );
     }
 
+    // 기존 약물 목록 조회 (상호작용 체크용)
+    const existingUserMedicines = await prisma.userMedicine.findMany({
+      where: {
+        userId: user.id,
+        isActive: true,
+      },
+      include: {
+        medicine: true,
+      },
+    });
+
+    const existingMedicineIds = existingUserMedicines.map(um => um.medicineId);
+
+    // 상호작용 체크
+    const interactions = await prisma.drugInteraction.findMany({
+      where: {
+        OR: [
+          {
+            medicineAId: id,
+            medicineBId: { in: existingMedicineIds },
+          },
+          {
+            medicineAId: { in: existingMedicineIds },
+            medicineBId: id,
+          },
+        ],
+      },
+      include: {
+        medicineA: {
+          select: { id: true, name: true, genericName: true },
+        },
+        medicineB: {
+          select: { id: true, name: true, genericName: true },
+        },
+      },
+    });
+
+    // 상호작용 정보 포맷팅
+    const interactionWarnings = interactions.map(interaction => {
+      const otherMedicine = interaction.medicineAId === id 
+        ? interaction.medicineB 
+        : interaction.medicineA;
+      
+      return {
+        otherMedicine,
+        severityLevel: interaction.severityLevel,
+        severityLabel: severityLabels[interaction.severityLevel] || interaction.severityLevel,
+        interactionType: interaction.interactionType,
+        interactionTypeLabel: interactionTypeLabels[interaction.interactionType] || interaction.interactionType,
+        description: interaction.description,
+        recommendation: interaction.recommendation,
+      };
+    });
+
+    // 성분 중복 체크
+    const duplicateIngredients: Array<{
+      ingredient: string;
+      existingMedicine: { id: string; name: string };
+    }> = [];
+
+    if (medicine.ingredients) {
+      const newIngredients = medicine.ingredients.split(',').map(i => i.trim().toLowerCase());
+      
+      existingUserMedicines.forEach(um => {
+        if (um.medicine.ingredients) {
+          const existingIngredients = um.medicine.ingredients.split(',').map(i => i.trim().toLowerCase());
+          const common = newIngredients.filter(i => existingIngredients.includes(i));
+          
+          common.forEach(ingredient => {
+            duplicateIngredients.push({
+              ingredient,
+              existingMedicine: {
+                id: um.medicine.id,
+                name: um.medicine.name,
+              },
+            });
+          });
+        }
+      });
+    }
+
     // 생활 패턴 가져오기 (복용 시간 추천용)
     const lifePattern = await prisma.lifePattern.findUnique({
       where: { userId: user.id },
@@ -88,6 +184,9 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: userMedicine,
+      interactionWarnings,
+      duplicateIngredients,
+      hasWarnings: interactionWarnings.length > 0 || duplicateIngredients.length > 0,
     });
   } catch (error) {
     console.error('Add medicine error:', error);

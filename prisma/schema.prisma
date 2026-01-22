@@ -71,8 +71,9 @@ model Medicine {
   usage             String?
   sideEffects       String?
   precautions       String?
-  interactions      String?
+  interactions      String?  // 일반적인 상호작용 설명 텍스트
   storage           String?
+  ingredients       String?  // 주요 성분 (쉼표로 구분)
   
   // 생체리듬 관련 속성
   sleepInducing     String   @default("NONE") // NONE, LOW, MEDIUM, HIGH
@@ -86,11 +87,33 @@ model Medicine {
   updatedAt         DateTime @updatedAt
 
   // Relations
-  userMedicines UserMedicine[]
+  userMedicines       UserMedicine[]
+  interactionsAsA     DrugInteraction[] @relation("MedicineA")
+  interactionsAsB     DrugInteraction[] @relation("MedicineB")
 
   @@index([name])
   @@index([itemSeq])
   @@map("medicines")
+}
+
+// 약물 상호작용 정보
+model DrugInteraction {
+  id              String   @id @default(cuid())
+  medicineAId     String
+  medicineBId     String
+  severityLevel   String   // MILD, MODERATE, SEVERE
+  interactionType String   // EFFECT_INCREASE, EFFECT_DECREASE, SIDE_EFFECT_INCREASE, ABSORPTION_CHANGE
+  description     String
+  recommendation  String?
+  createdAt       DateTime @default(now())
+  
+  medicineA       Medicine @relation("MedicineA", fields: [medicineAId], references: [id], onDelete: Cascade)
+  medicineB       Medicine @relation("MedicineB", fields: [medicineBId], references: [id], onDelete: Cascade)
+  
+  @@unique([medicineAId, medicineBId])
+  @@index([medicineAId])
+  @@index([medicineBId])
+  @@map("drug_interactions")
 }
 
 // 생활 패턴

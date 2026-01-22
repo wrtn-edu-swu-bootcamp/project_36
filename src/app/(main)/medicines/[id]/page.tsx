@@ -6,19 +6,38 @@ import Card, { CardHeader, CardBody } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import DisclaimerBanner from '@/components/DisclaimerBanner';
 import AddMedicineDialog from '@/components/AddMedicineDialog';
-import { ClockIcon, InformationCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ClockIcon, InformationCircleIcon, ExclamationTriangleIcon, ShieldExclamationIcon } from '@heroicons/react/24/outline';
+
+interface InteractionInfo {
+  id: string;
+  otherMedicine: {
+    id: string;
+    name: string;
+    genericName: string;
+    className: string;
+  };
+  severityLevel: string;
+  severityLabel: string;
+  interactionType: string;
+  interactionTypeLabel: string;
+  description: string;
+  recommendation: string | null;
+}
 
 export default function MedicineDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [medicine, setMedicine] = useState<any>(null);
   const [recommendation, setRecommendation] = useState<any>(null);
+  const [interactions, setInteractions] = useState<InteractionInfo[]>([]);
+  const [userMedicineInteractions, setUserMedicineInteractions] = useState<InteractionInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   useEffect(() => {
     if (params.id) {
       fetchMedicineDetail();
+      fetchInteractions();
     }
   }, [params.id]);
 
@@ -39,6 +58,46 @@ export default function MedicineDetailPage() {
       alert('약물 정보를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchInteractions = async () => {
+    try {
+      const response = await fetch(`/api/medicines/${params.id}/interactions`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setInteractions(result.data.allInteractions || []);
+        setUserMedicineInteractions(result.data.userMedicineInteractions || []);
+      }
+    } catch (error) {
+      console.error('Fetch interactions error:', error);
+    }
+  };
+
+  const getSeverityColor = (level: string) => {
+    switch (level) {
+      case 'SEVERE':
+        return 'bg-danger-50 border-danger-200 text-danger-800';
+      case 'MODERATE':
+        return 'bg-warning-50 border-warning-200 text-warning-800';
+      case 'MILD':
+        return 'bg-info-50 border-info-200 text-info-800';
+      default:
+        return 'bg-neutral-gray-50 border-neutral-gray-200 text-neutral-gray-800';
+    }
+  };
+
+  const getSeverityBadgeColor = (level: string) => {
+    switch (level) {
+      case 'SEVERE':
+        return 'bg-danger text-white';
+      case 'MODERATE':
+        return 'bg-warning text-white';
+      case 'MILD':
+        return 'bg-info text-white';
+      default:
+        return 'bg-neutral-gray-400 text-white';
     }
   };
 
@@ -255,13 +314,121 @@ export default function MedicineDetailPage() {
         </Card>
       )}
 
-      {/* 약물 상호작용 */}
+      {/* 약물 상호작용 - 일반 설명 */}
       {medicine.interactions && (
         <Card className="mb-6">
-          <CardHeader>약물 상호작용</CardHeader>
+          <CardHeader>약물 상호작용 안내</CardHeader>
           <CardBody>
             <p className="text-small text-neutral-gray-600">{medicine.interactions}</p>
           </CardBody>
+        </Card>
+      )}
+
+      {/* 내 약과의 상호작용 경고 (로그인 사용자) */}
+      {userMedicineInteractions.length > 0 && (
+        <Card className="mb-6 border-2 border-danger">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <ShieldExclamationIcon className="w-6 h-6 text-danger" />
+              <CardHeader className="!mb-0 text-danger-800">
+                현재 복용 중인 약물과의 상호작용
+              </CardHeader>
+            </div>
+            
+            <div className="bg-danger-50 p-3 rounded-lg">
+              <p className="text-small text-danger-800">
+                ⚠️ 현재 등록된 약물 중 이 약과 상호작용이 있을 수 있는 약물이 있습니다.
+                추가 전 아래 내용을 확인하시고, 반드시 의사 또는 약사와 상담하세요.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {userMedicineInteractions.map((interaction) => (
+                <div
+                  key={interaction.id}
+                  className={`p-4 rounded-lg border ${getSeverityColor(interaction.severityLevel)}`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityBadgeColor(interaction.severityLevel)}`}>
+                        {interaction.severityLabel}
+                      </span>
+                      <span className="text-small font-medium">
+                        {interaction.otherMedicine.name}
+                      </span>
+                    </div>
+                    <span className="text-xs text-neutral-gray-500">
+                      {interaction.interactionTypeLabel}
+                    </span>
+                  </div>
+                  <p className="text-small">{interaction.description}</p>
+                  {interaction.recommendation && (
+                    <p className="text-small mt-2 font-medium">
+                      💡 {interaction.recommendation}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* 함께 복용 시 주의가 필요한 약물 */}
+      {interactions.length > 0 && (
+        <Card className="mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <ExclamationTriangleIcon className="w-6 h-6 text-warning" />
+              <CardHeader className="!mb-0">함께 복용 시 주의가 필요한 약물</CardHeader>
+            </div>
+            
+            <p className="text-small text-neutral-gray-600">
+              아래 약물과 함께 복용할 경우 상호작용이 발생할 수 있습니다.
+              해당 약물을 복용 중이시라면 의사 또는 약사와 상담하세요.
+            </p>
+
+            <div className="space-y-3">
+              {interactions.map((interaction) => (
+                <div
+                  key={interaction.id}
+                  className={`p-4 rounded-lg border ${getSeverityColor(interaction.severityLevel)}`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityBadgeColor(interaction.severityLevel)}`}>
+                        {interaction.severityLabel}
+                      </span>
+                      <span className="text-small font-medium">
+                        {interaction.otherMedicine.name}
+                      </span>
+                      {interaction.otherMedicine.className && (
+                        <span className="text-xs text-neutral-gray-500">
+                          ({interaction.otherMedicine.className})
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-neutral-gray-500">
+                      {interaction.interactionTypeLabel}
+                    </span>
+                  </div>
+                  <p className="text-small">{interaction.description}</p>
+                  {interaction.recommendation && (
+                    <p className="text-small mt-2 font-medium">
+                      💡 {interaction.recommendation}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-neutral-gray-200 pt-3">
+              <p className="text-small text-neutral-gray-500">
+                ※ 위 정보는 일반적으로 알려진 상호작용 정보입니다. 
+                모든 상호작용을 포괄하지 않으며, 개인의 건강 상태에 따라 다를 수 있습니다.
+              </p>
+            </div>
+          </div>
         </Card>
       )}
 

@@ -21,6 +21,7 @@ async function main() {
       usage: '성인 1회 1-2정, 1일 3-4회 복용',
       sideEffects: '드물게 오심, 구토, 식욕부진, 피부발진 등',
       precautions: '음주 시 복용 금지. 장기 복용 시 간 손상 위험.',
+      ingredients: '아세트아미노펜',
       sleepInducing: 'NONE',
       alertnessEffect: 'NONE',
       stomachIrritation: false,
@@ -35,6 +36,7 @@ async function main() {
       usage: '성인 1회 1정, 1일 3회 복용',
       sideEffects: '위장장애, 출혈 시간 연장, 알레르기 반응',
       precautions: '위장장애 예방을 위해 식후 복용. 출혈 위험 주의.',
+      ingredients: '아세틸살리실산',
       sleepInducing: 'NONE',
       alertnessEffect: 'NONE',
       stomachIrritation: true,
@@ -49,6 +51,7 @@ async function main() {
       usage: '성인 1회 1정, 1일 3회 복용',
       sideEffects: '드물게 오심, 불면, 초조, 떨림 등',
       precautions: '카페인 함유로 저녁 복용 시 수면 방해 가능',
+      ingredients: '아세트아미노펜, 에텐자미드, 카페인',
       sleepInducing: 'NONE',
       alertnessEffect: 'MEDIUM',
       stomachIrritation: false,
@@ -63,6 +66,7 @@ async function main() {
       usage: '성인 1회 1포, 1일 3회 복용',
       sideEffects: '졸음, 구갈, 두통, 오심 등',
       precautions: '졸음이 올 수 있으므로 운전 및 기계 조작 시 주의',
+      ingredients: '아세트아미노펜, 슈도에페드린, 클로르페니라민',
       sleepInducing: 'HIGH',
       alertnessEffect: 'NONE',
       stomachIrritation: false,
@@ -77,6 +81,7 @@ async function main() {
       usage: '성인 1회 1정, 1일 1회 복용',
       sideEffects: '졸음, 피로감, 구갈, 두통 등',
       precautions: '졸음을 유발할 수 있으므로 취침 전 복용 권장',
+      ingredients: '세티리진',
       sleepInducing: 'MEDIUM',
       alertnessEffect: 'NONE',
       stomachIrritation: false,
@@ -1112,13 +1117,181 @@ async function main() {
   ];
 
   // 약물 데이터 삽입
+  const createdMedicines: Record<string, string> = {};
   for (const medicine of medicines) {
-    await prisma.medicine.create({
+    const created = await prisma.medicine.create({
       data: medicine,
     });
+    createdMedicines[medicine.name] = created.id;
   }
 
   console.log(`✅ ${medicines.length}개의 약물 데이터 추가 완료`);
+
+  // 기존 상호작용 데이터 삭제
+  await prisma.drugInteraction.deleteMany();
+  console.log('✅ 기존 상호작용 데이터 삭제 완료');
+
+  // 약물 상호작용 데이터
+  const interactions = [
+    // 아스피린 + 항응고제 (와파린)
+    {
+      medicineAName: '아스피린',
+      medicineBName: '쿠마딘정',
+      severityLevel: 'SEVERE',
+      interactionType: 'SIDE_EFFECT_INCREASE',
+      description: '아스피린과 와파린을 함께 복용하면 출혈 위험이 크게 증가할 수 있습니다.',
+      recommendation: '반드시 의사와 상담 후 복용하시고, 출혈 증상(멍, 코피, 잇몸출혈 등)에 주의하세요.',
+    },
+    // 아스피린 + 이부프로펜
+    {
+      medicineAName: '아스피린',
+      medicineBName: '부루펜정 400mg',
+      severityLevel: 'MODERATE',
+      interactionType: 'EFFECT_DECREASE',
+      description: '이부프로펜이 아스피린의 혈소판 억제 효과를 방해할 수 있습니다.',
+      recommendation: '아스피린 복용 후 최소 30분 후에 이부프로펜을 복용하거나, 다른 진통제를 고려하세요.',
+    },
+    // 항히스타민제 + 수면제
+    {
+      medicineAName: '지르텍정 10mg',
+      medicineBName: '스틸녹스정 10mg',
+      severityLevel: 'MODERATE',
+      interactionType: 'SIDE_EFFECT_INCREASE',
+      description: '두 약물 모두 졸음을 유발하여 과도한 진정 효과가 나타날 수 있습니다.',
+      recommendation: '함께 복용 시 졸음이 심해질 수 있으니 운전이나 기계 조작을 피하세요.',
+    },
+    // 고혈압약 + 진통제
+    {
+      medicineAName: '노바스크정 5mg',
+      medicineBName: '부루펜정 400mg',
+      severityLevel: 'MODERATE',
+      interactionType: 'EFFECT_DECREASE',
+      description: '이부프로펜 등 비스테로이드성 소염진통제는 혈압약의 효과를 감소시킬 수 있습니다.',
+      recommendation: '장기간 진통제 복용이 필요하면 의사와 상담하여 혈압 모니터링을 받으세요.',
+    },
+    // 당뇨약 + 고혈압약
+    {
+      medicineAName: '메트포민정 500mg',
+      medicineBName: '디오반정 80mg',
+      severityLevel: 'MILD',
+      interactionType: 'EFFECT_INCREASE',
+      description: '일부 고혈압약은 혈당 조절에 영향을 줄 수 있습니다.',
+      recommendation: '정기적으로 혈당을 확인하고, 이상이 있으면 의사와 상담하세요.',
+    },
+    // 고지혈증약 + 위장약
+    {
+      medicineAName: '리피토정 10mg',
+      medicineBName: '암씨롱정',
+      severityLevel: 'MILD',
+      interactionType: 'ABSORPTION_CHANGE',
+      description: '제산제는 일부 약물의 흡수를 방해할 수 있습니다.',
+      recommendation: '두 약물은 2시간 이상 간격을 두고 복용하세요.',
+    },
+    // 갑상선약 + 제산제
+    {
+      medicineAName: '신지로이드정 100mcg',
+      medicineBName: '암씨롱정',
+      severityLevel: 'MODERATE',
+      interactionType: 'ABSORPTION_CHANGE',
+      description: '제산제가 갑상선 호르몬제의 흡수를 방해하여 효과가 감소할 수 있습니다.',
+      recommendation: '갑상선약은 공복에 단독 복용하고, 제산제는 4시간 이상 간격을 두세요.',
+    },
+    // 항히스타민제 + 항불안제
+    {
+      medicineAName: '알레르기정',
+      medicineBName: '자낙스정',
+      severityLevel: 'SEVERE',
+      interactionType: 'SIDE_EFFECT_INCREASE',
+      description: '두 약물 모두 중추신경계를 억제하여 심한 졸음, 호흡억제가 나타날 수 있습니다.',
+      recommendation: '함께 복용은 피하시고, 반드시 의사와 상담하세요.',
+    },
+    // 수면제 + 항불안제
+    {
+      medicineAName: '스틸녹스정 10mg',
+      medicineBName: '자낙스정',
+      severityLevel: 'SEVERE',
+      interactionType: 'SIDE_EFFECT_INCREASE',
+      description: '두 약물 모두 중추신경계를 억제하여 위험한 수준의 진정 효과가 나타날 수 있습니다.',
+      recommendation: '함께 복용은 매우 위험할 수 있습니다. 반드시 의사 처방에 따라 복용하세요.',
+    },
+    // 항응고제 + 진통제
+    {
+      medicineAName: '쿠마딘정',
+      medicineBName: '부루펜정 400mg',
+      severityLevel: 'SEVERE',
+      interactionType: 'SIDE_EFFECT_INCREASE',
+      description: '비스테로이드성 소염진통제는 출혈 위험을 크게 증가시킵니다.',
+      recommendation: '항응고제 복용 시 진통제는 아세트아미노펜(타이레놀)을 사용하세요.',
+    },
+    // 당뇨약 간 상호작용
+    {
+      medicineAName: '메트포민정 500mg',
+      medicineBName: '아마릴정 2mg',
+      severityLevel: 'MODERATE',
+      interactionType: 'EFFECT_INCREASE',
+      description: '두 가지 당뇨약을 함께 복용하면 저혈당 위험이 증가할 수 있습니다.',
+      recommendation: '저혈당 증상(식은땀, 떨림, 어지러움)에 주의하고, 혈당을 자주 확인하세요.',
+    },
+    // 고혈압약 + 이뇨제
+    {
+      medicineAName: '노바스크정 5mg',
+      medicineBName: '라식스정',
+      severityLevel: 'MODERATE',
+      interactionType: 'EFFECT_INCREASE',
+      description: '함께 복용 시 혈압이 과도하게 떨어질 수 있습니다.',
+      recommendation: '어지러움이나 실신 증상에 주의하고, 천천히 일어나세요.',
+    },
+    // 항생제 + 제산제
+    {
+      medicineAName: '시프로플록사신',
+      medicineBName: '암씨롱정',
+      severityLevel: 'MODERATE',
+      interactionType: 'ABSORPTION_CHANGE',
+      description: '제산제가 항생제의 흡수를 크게 감소시켜 효과가 떨어질 수 있습니다.',
+      recommendation: '항생제는 제산제 복용 2시간 전 또는 6시간 후에 복용하세요.',
+    },
+    // 진통제 + 항경련제
+    {
+      medicineAName: '트라마돌',
+      medicineBName: '리리카캡슐',
+      severityLevel: 'MODERATE',
+      interactionType: 'SIDE_EFFECT_INCREASE',
+      description: '두 약물 모두 중추신경계에 작용하여 졸음, 어지러움이 심해질 수 있습니다.',
+      recommendation: '운전이나 위험한 작업을 피하고, 증상이 심하면 의사와 상담하세요.',
+    },
+    // 감기약 + 항히스타민제 (성분 중복 가능)
+    {
+      medicineAName: '판콜에이내복액',
+      medicineBName: '지르텍정 10mg',
+      severityLevel: 'MODERATE',
+      interactionType: 'SIDE_EFFECT_INCREASE',
+      description: '감기약에 항히스타민 성분이 포함되어 있어 졸음이 심해질 수 있습니다.',
+      recommendation: '감기약 복용 시 추가 항히스타민제 복용은 피하세요.',
+    },
+  ];
+
+  // 상호작용 데이터 삽입
+  let interactionCount = 0;
+  for (const interaction of interactions) {
+    const medicineAId = createdMedicines[interaction.medicineAName];
+    const medicineBId = createdMedicines[interaction.medicineBName];
+    
+    if (medicineAId && medicineBId) {
+      await prisma.drugInteraction.create({
+        data: {
+          medicineAId,
+          medicineBId,
+          severityLevel: interaction.severityLevel,
+          interactionType: interaction.interactionType,
+          description: interaction.description,
+          recommendation: interaction.recommendation,
+        },
+      });
+      interactionCount++;
+    }
+  }
+
+  console.log(`✅ ${interactionCount}개의 약물 상호작용 데이터 추가 완료`);
   console.log('🎉 데이터베이스 시드 완료!');
 }
 

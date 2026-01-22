@@ -4,14 +4,42 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Card, { CardHeader, CardBody } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { PlusIcon, TrashIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, ClockIcon, ShieldExclamationIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+
+interface InteractionData {
+  interactions: Array<{
+    id: string;
+    medicineA: { id: string; name: string; genericName: string };
+    medicineB: { id: string; name: string; genericName: string };
+    severityLevel: string;
+    severityLabel: string;
+    interactionType: string;
+    interactionTypeLabel: string;
+    description: string;
+    recommendation: string | null;
+  }>;
+  duplicateIngredients: Array<{
+    ingredient: string;
+    medicines: Array<{ id: string; name: string }>;
+  }>;
+  summary: {
+    totalMedicines: number;
+    interactionCount: number;
+    severeCount: number;
+    moderateCount: number;
+    mildCount: number;
+    hasDuplicateIngredients: boolean;
+  };
+}
 
 export default function MyMedicinesPage() {
   const [medicines, setMedicines] = useState<any[]>([]);
+  const [interactionData, setInteractionData] = useState<InteractionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchMedicines();
+    fetchInteractions();
   }, []);
 
   const fetchMedicines = async () => {
@@ -26,6 +54,45 @@ export default function MyMedicinesPage() {
       console.error('Fetch medicines error:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchInteractions = async () => {
+    try {
+      const response = await fetch('/api/user-medicines/interactions');
+      const result = await response.json();
+      
+      if (result.success) {
+        setInteractionData(result.data);
+      }
+    } catch (error) {
+      console.error('Fetch interactions error:', error);
+    }
+  };
+
+  const getSeverityColor = (level: string) => {
+    switch (level) {
+      case 'SEVERE':
+        return 'bg-danger-50 border-danger-200 text-danger-800';
+      case 'MODERATE':
+        return 'bg-warning-50 border-warning-200 text-warning-800';
+      case 'MILD':
+        return 'bg-info-50 border-info-200 text-info-800';
+      default:
+        return 'bg-neutral-gray-50 border-neutral-gray-200 text-neutral-gray-800';
+    }
+  };
+
+  const getSeverityBadgeColor = (level: string) => {
+    switch (level) {
+      case 'SEVERE':
+        return 'bg-danger text-white';
+      case 'MODERATE':
+        return 'bg-warning text-white';
+      case 'MILD':
+        return 'bg-info text-white';
+      default:
+        return 'bg-neutral-gray-400 text-white';
     }
   };
 
@@ -137,6 +204,142 @@ export default function MyMedicinesPage() {
               </div>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* 상호작용 및 주의사항 섹션 */}
+      {medicines.length >= 2 && interactionData && (
+        <div className="mt-8">
+          <h2 className="text-h2 text-neutral-gray-900 mb-4 flex items-center gap-2">
+            <ShieldExclamationIcon className="w-6 h-6" />
+            복용 중인 약물 간 상호작용
+          </h2>
+
+          {/* 요약 정보 */}
+          {(interactionData.summary.interactionCount > 0 || interactionData.summary.hasDuplicateIngredients) ? (
+            <>
+              <Card className="mb-4 border-2 border-warning">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ExclamationTriangleIcon className="w-5 h-5 text-warning" />
+                    <p className="text-body font-semibold text-warning-800">
+                      주의가 필요한 사항이 있습니다
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-4 flex-wrap text-small">
+                    {interactionData.summary.severeCount > 0 && (
+                      <span className="px-3 py-1 bg-danger text-white rounded-lg">
+                        경고 {interactionData.summary.severeCount}건
+                      </span>
+                    )}
+                    {interactionData.summary.moderateCount > 0 && (
+                      <span className="px-3 py-1 bg-warning text-white rounded-lg">
+                        주의 {interactionData.summary.moderateCount}건
+                      </span>
+                    )}
+                    {interactionData.summary.mildCount > 0 && (
+                      <span className="px-3 py-1 bg-info text-white rounded-lg">
+                        참고 {interactionData.summary.mildCount}건
+                      </span>
+                    )}
+                    {interactionData.summary.hasDuplicateIngredients && (
+                      <span className="px-3 py-1 bg-neutral-gray-600 text-white rounded-lg">
+                        성분 중복 있음
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-small text-neutral-gray-600">
+                    아래 정보는 일반적으로 알려진 내용입니다. 
+                    복용에 관한 최종 결정은 반드시 의사 또는 약사와 상담하세요.
+                  </p>
+                </div>
+              </Card>
+
+              {/* 상호작용 목록 */}
+              {interactionData.interactions.length > 0 && (
+                <Card className="mb-4">
+                  <CardHeader>약물 간 상호작용</CardHeader>
+                  <div className="space-y-3">
+                    {interactionData.interactions.map((interaction) => (
+                      <div
+                        key={interaction.id}
+                        className={`p-4 rounded-lg border ${getSeverityColor(interaction.severityLevel)}`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityBadgeColor(interaction.severityLevel)}`}>
+                              {interaction.severityLabel}
+                            </span>
+                            <span className="text-small font-medium">
+                              {interaction.medicineA.name} + {interaction.medicineB.name}
+                            </span>
+                          </div>
+                          <span className="text-xs text-neutral-gray-500 whitespace-nowrap">
+                            {interaction.interactionTypeLabel}
+                          </span>
+                        </div>
+                        <p className="text-small">{interaction.description}</p>
+                        {interaction.recommendation && (
+                          <p className="text-small mt-2 font-medium">
+                            💡 {interaction.recommendation}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {/* 성분 중복 경고 */}
+              {interactionData.duplicateIngredients.length > 0 && (
+                <Card className="mb-4">
+                  <CardHeader>성분 중복 주의</CardHeader>
+                  <div className="space-y-3">
+                    <p className="text-small text-neutral-gray-600">
+                      동일 성분이 포함된 약물을 중복 복용할 경우 과량 복용의 위험이 있을 수 있습니다.
+                    </p>
+                    {interactionData.duplicateIngredients.map((dup, index) => (
+                      <div
+                        key={index}
+                        className="p-3 rounded-lg border bg-warning-50 border-warning-200"
+                      >
+                        <p className="text-small font-medium text-warning-800 mb-1">
+                          성분: {dup.ingredient}
+                        </p>
+                        <p className="text-small text-warning-700">
+                          해당 약물: {dup.medicines.map(m => m.name).join(', ')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </>
+          ) : (
+            <Card>
+              <div className="text-center py-8">
+                <div className="text-4xl mb-3">✅</div>
+                <p className="text-body text-neutral-gray-700 font-medium">
+                  현재 등록된 약물 간 알려진 주요 상호작용이 없습니다
+                </p>
+                <p className="text-small text-neutral-gray-500 mt-2">
+                  다만 모든 상호작용을 포괄하지 않으므로, 
+                  새로운 약 추가 시 반드시 의사·약사에게 현재 복용 중인 약 목록을 알려주세요.
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {/* 한계 명시 */}
+          <div className="mt-4 p-4 bg-neutral-gray-50 rounded-lg">
+            <p className="text-small text-neutral-gray-600">
+              <strong>⚠️ 중요:</strong> 위 정보는 일반적으로 알려진 상호작용 정보이며, 
+              모든 상호작용을 포괄할 수 없습니다. 개인의 건강 상태에 따라 다를 수 있으며, 
+              새로운 약 추가 시 반드시 의사·약사에게 현재 복용 중인 약 목록을 제공해주세요.
+            </p>
+          </div>
         </div>
       )}
     </div>
