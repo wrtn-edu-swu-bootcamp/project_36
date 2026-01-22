@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import prisma from './prisma';
 
 export const authOptions: NextAuthOptions = {
-  adapter: prisma ? (PrismaAdapter(prisma) as any) : undefined,
+  adapter: PrismaAdapter(prisma) as any,
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -14,10 +14,6 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!prisma) {
-          throw new Error('데이터베이스가 설정되지 않았습니다.');
-        }
-
         if (!credentials?.email || !credentials?.password) {
           throw new Error('이메일과 비밀번호를 입력해주세요.');
         }

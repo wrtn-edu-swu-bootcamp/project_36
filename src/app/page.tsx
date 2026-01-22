@@ -41,9 +41,9 @@ export default function Home() {
 
             <div className="card text-left">
               <div className="text-4xl mb-4">📚</div>
-              <h3 className="card-header">교육 콘텐츠</h3>
+              <h3 className="card-header">참고 자료</h3>
               <p className="card-body">
-                시간약리학과 올바른 복용법에 대한 전문 지식을 제공합니다.
+                시간약리학과 올바른 복용법에 대한 정보를 제공합니다.
               </p>
             </div>
           </div>
@@ -54,7 +54,7 @@ export default function Home() {
             <div className="text-left">
               <h4 className="font-bold mb-2">중요</h4>
               <p>
-                이 서비스는 교육 목적의 참고 자료입니다. 복용 시간 변경이나 치료 결정은 반드시
+                이 서비스는 참고용 정보를 제공합니다. 복용 시간 변경이나 치료 결정은 반드시
                 의사 또는 약사와 상담하세요.
               </p>
             </div>

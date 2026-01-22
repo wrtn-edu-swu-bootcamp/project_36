@@ -11,20 +11,6 @@ const registerSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    // 데이터베이스 연결 확인
-    if (!prisma) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'DATABASE_NOT_CONFIGURED',
-            message: '데이터베이스가 설정되지 않았습니다. 관리자에게 문의하세요.',
-          },
-        },
-        { status: 503 }
-      );
-    }
-
     const body = await req.json();
     const validatedData = registerSchema.parse(body);
 

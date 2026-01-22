@@ -25,7 +25,7 @@ export default function Footer() {
               </li>
               <li>
                 <a href="/education" className="hover:text-primary transition-colors">
-                  교육 콘텐츠
+                  참고 자료
                 </a>
               </li>
               <li>
@@ -45,8 +45,8 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold text-white mb-4">주의사항</h4>
             <p className="text-small text-neutral-gray-400">
-              본 서비스는 교육 목적으로 제공되며, 의학적 조언을 대체하지 않습니다. 복용 시간
-              변경이나 치료 결정은 반드시 의사 또는 약사와 상담하세요.
+              본 서비스는 의학적 조언을 대체하지 않습니다. 복용 시간 변경이나 치료 결정은
+              반드시 의사 또는 약사와 상담하세요.
             </p>
           </div>
         </div>

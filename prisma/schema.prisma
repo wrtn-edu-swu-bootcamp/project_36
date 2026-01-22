@@ -3,7 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // 사용자 모델
@@ -125,8 +126,8 @@ model UserMedicine {
   notes            String?
   isActive         Boolean  @default(true)
   
-  // 추천 시간
-  recommendedTimes String[] // ["08:00", "20:00"]
+  // 추천 시간 (JSON 문자열로 저장)
+  recommendedTimes String? // JSON: ["08:00", "20:00"]
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

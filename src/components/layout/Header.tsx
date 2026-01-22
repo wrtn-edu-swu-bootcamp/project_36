@@ -51,7 +51,7 @@ export default function Header() {
                   : 'text-neutral-gray-600 hover:text-primary'
               }`}
             >
-              교육
+              참고자료
             </Link>
           </nav>
 
