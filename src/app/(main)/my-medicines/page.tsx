@@ -96,6 +96,31 @@ export default function MyMedicinesPage() {
     }
   };
 
+  const handleDelete = async (id: string, medicineName: string) => {
+    if (!confirm(`"${medicineName}"을(를) 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/user-medicines/${id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // 목록 새로고침
+        await fetchMedicines();
+        await fetchInteractions();
+      } else {
+        alert(result.error || '약 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Delete medicine error:', error);
+      alert('약 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   return (
     <div className="container-custom py-8">
       {/* Header */}
@@ -153,11 +178,7 @@ export default function MyMedicinesPage() {
                   <button
                     className="btn-sm btn-danger"
                     aria-label="약 삭제"
-                    onClick={() => {
-                      if (confirm('이 약을 삭제하시겠습니까?')) {
-                        // TODO: 삭제 API 호출
-                      }
-                    }}
+                    onClick={() => handleDelete(userMedicine.id, userMedicine.medicine.name)}
                   >
                     <TrashIcon className="w-4 h-4" />
                   </button>
@@ -183,14 +204,24 @@ export default function MyMedicinesPage() {
                       </p>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                      {userMedicine.recommendedTimes.map((time: string, index: number) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-primary-50 text-primary rounded-lg text-small font-medium"
-                        >
-                          {time}
-                        </span>
-                      ))}
+                      {userMedicine.recommendedTimes.map((time: string, index: number) => {
+                        const hour = parseInt(time.split(':')[0]);
+                        const getTimeIcon = () => {
+                          if (hour >= 6 && hour < 12) return '🌅';
+                          if (hour >= 12 && hour < 18) return '☀️';
+                          if (hour >= 18 && hour < 22) return '🌙';
+                          return '🌙';
+                        };
+                        
+                        return (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-primary-50 text-primary rounded-lg text-small font-medium"
+                          >
+                            {getTimeIcon()} {time}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

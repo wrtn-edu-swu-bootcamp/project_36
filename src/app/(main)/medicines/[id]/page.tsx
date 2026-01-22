@@ -170,14 +170,24 @@ export default function MedicineDetailPage() {
                 일반적으로 고려되는 복용 시간대
               </p>
               <div className="flex gap-3 flex-wrap">
-                {recommendation.recommendedTimes.map((time: string, index: number) => (
-                  <span
-                    key={index}
-                    className="px-4 py-2 bg-primary text-white rounded-lg text-h4 font-bold"
-                  >
-                    {time}
-                  </span>
-                ))}
+                {recommendation.recommendedTimes.map((time: string, index: number) => {
+                  const hour = parseInt(time.split(':')[0]);
+                  const getTimeIcon = () => {
+                    if (hour >= 6 && hour < 12) return '🌅';
+                    if (hour >= 12 && hour < 18) return '☀️';
+                    if (hour >= 18 && hour < 22) return '🌙';
+                    return '🌙';
+                  };
+                  
+                  return (
+                    <span
+                      key={index}
+                      className="px-4 py-2 bg-primary text-white rounded-lg text-h4 font-bold"
+                    >
+                      {getTimeIcon()} {time}
+                    </span>
+                  );
+                })}
               </div>
             </div>
 
