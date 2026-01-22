@@ -5,14 +5,15 @@ import prisma from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     // 약물 정보 조회
     const medicine = await prisma.medicine.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!medicine) {
@@ -173,7 +174,7 @@ function generateDetailedRecommendation(medicine: any, lifePattern: any) {
     const workStartTime = lifePattern.workStartTime;
     const workEndTime = lifePattern.workEndTime;
     
-    let considerations = [];
+    const considerations = [];
     
     considerations.push(`기상 시간: ${lifePattern.wakeUpTime}, 취침 시간: ${lifePattern.bedTime}`);
     

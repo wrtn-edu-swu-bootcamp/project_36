@@ -5,9 +5,10 @@ import prisma from '@/lib/prisma';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -33,7 +34,7 @@ export async function POST(
 
     // 약물 존재 확인
     const medicine = await prisma.medicine.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!medicine) {
@@ -47,7 +48,7 @@ export async function POST(
     const existingUserMedicine = await prisma.userMedicine.findFirst({
       where: {
         userId: user.id,
-        medicineId: params.id,
+        medicineId: id,
         isActive: true,
       },
     });
@@ -71,7 +72,7 @@ export async function POST(
     const userMedicine = await prisma.userMedicine.create({
       data: {
         userId: user.id,
-        medicineId: params.id,
+        medicineId: id,
         dosage: dosage || '1정',
         frequency: parseInt(frequency) || 1,
         startDate: new Date(startDate || new Date()),

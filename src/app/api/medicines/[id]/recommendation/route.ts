@@ -5,12 +5,13 @@ import prisma from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // 약물 정보 조회
     const medicine = await prisma.medicine.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!medicine) {
@@ -65,7 +66,7 @@ function generateRecommendation(medicine: any, lifePattern: any) {
   let mealPeriod = ''; // 아침/점심/저녁
   let reason = '';
   let chronopharmacology = '';
-  let precautions: string[] = [];
+  const precautions: string[] = [];
 
   // 졸음 유발 약물
   if (medicine.sleepInducing === 'HIGH') {
