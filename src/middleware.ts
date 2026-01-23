@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-export default async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -46,6 +46,7 @@ export const config = {
     '/settings/:path*',
     '/mypage/:path*',
     '/my-medicines/:path*',
+    '/education/:path*',
     '/login',
     '/register',
   ],

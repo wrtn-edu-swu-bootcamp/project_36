@@ -45,14 +45,15 @@ function LoginForm() {
 
       if (result?.error) {
         setError(result.error);
+        setIsLoading(false);
       } else {
+        // 세션이 설정될 시간을 주기 위해 약간의 지연 후 리디렉션
         const from = searchParams.get('from') || '/dashboard';
-        router.push(from);
-        router.refresh();
+        // window.location을 사용하여 전체 페이지 리로드로 세션 쿠키가 확실히 적용되도록 함
+        window.location.href = from;
       }
     } catch (err) {
       setError('로그인 중 오류가 발생했습니다.');
-    } finally {
       setIsLoading(false);
     }
   };
