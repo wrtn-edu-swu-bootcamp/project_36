@@ -5,8 +5,8 @@ import { getToken } from 'next-auth/jwt';
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  // API 라우트는 middleware를 건너뜀
-  if (pathname.startsWith('/api/')) {
+  // API 라우트와 홈페이지는 middleware를 건너뜀
+  if (pathname.startsWith('/api/') || pathname === '/') {
     return NextResponse.next();
   }
 
@@ -22,8 +22,8 @@ export async function middleware(request: NextRequest) {
 
     // 인증 페이지(/login, /register)인 경우
     if (isAuthPage) {
+      // 이미 로그인된 사용자는 dashboard로 리디렉션
       if (isAuth) {
-        // 이미 로그인된 사용자는 dashboard로 리디렉션
         const dashboardUrl = new URL('/dashboard', request.url);
         return NextResponse.redirect(dashboardUrl);
       }
@@ -55,14 +55,14 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/medicines/:path*',
-    '/schedule/:path*',
-    '/settings/:path*',
-    '/mypage/:path*',
-    '/my-medicines/:path*',
-    '/education/:path*',
-    '/login',
-    '/register',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
