@@ -37,20 +37,46 @@ function LoginForm() {
     setError('');
 
     try {
+      const from = searchParams.get('from') || '/dashboard';
+      
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
         redirect: false,
+        callbackUrl: from,
       });
 
       if (result?.error) {
         setError(result.error);
         setIsLoading(false);
-      } else {
-        // 세션이 설정될 시간을 주기 위해 약간의 지연 후 리디렉션
-        const from = searchParams.get('from') || '/dashboard';
-        // window.location을 사용하여 전체 페이지 리로드로 세션 쿠키가 확실히 적용되도록 함
-        window.location.href = from;
+      } else if (result?.ok) {
+        // 세션 쿠키가 설정되도록 짧은 지연 후 리디렉션
+        // NextAuth가 쿠키를 설정하는 시간을 확보
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // 세션 API를 호출하여 쿠키가 확실히 설정되었는지 확인
+        try {
+          const sessionResponse = await fetch('/api/auth/session', {
+            method: 'GET',
+            credentials: 'include',
+            cache: 'no-store',
+          });
+          
+          if (sessionResponse.ok) {
+            // 세션이 확인되면 리디렉션
+            window.location.href = from;
+          } else {
+            // 세션이 없으면 다시 시도
+            setTimeout(() => {
+              window.location.href = from;
+            }, 200);
+          }
+        } catch {
+          // API 호출 실패 시에도 리디렉션 시도
+          setTimeout(() => {
+            window.location.href = from;
+          }, 200);
+        }
       }
     } catch (err) {
       setError('로그인 중 오류가 발생했습니다.');
