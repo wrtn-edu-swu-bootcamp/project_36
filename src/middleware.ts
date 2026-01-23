@@ -3,6 +3,13 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  
+  // API 라우트는 middleware를 건너뜀
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   try {
     const token = await getToken({
       req: request,
@@ -10,7 +17,6 @@ export async function middleware(request: NextRequest) {
     });
 
     const isAuth = !!token;
-    const pathname = request.nextUrl.pathname;
     const isAuthPage = pathname.startsWith('/login') || 
                        pathname.startsWith('/register');
 
@@ -18,7 +24,8 @@ export async function middleware(request: NextRequest) {
     if (isAuthPage) {
       if (isAuth) {
         // 이미 로그인된 사용자는 dashboard로 리디렉션
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+        const dashboardUrl = new URL('/dashboard', request.url);
+        return NextResponse.redirect(dashboardUrl);
       }
       // 로그인 안 된 사용자는 접근 허용
       return NextResponse.next();
@@ -27,20 +34,21 @@ export async function middleware(request: NextRequest) {
     // 보호된 페이지인 경우
     if (!isAuth) {
       // 로그인 안 된 사용자는 로그인 페이지로 리디렉션
-      let from = pathname;
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
       if (request.nextUrl.search) {
-        from += request.nextUrl.search;
+        loginUrl.searchParams.set('query', request.nextUrl.search);
       }
-
-      return NextResponse.redirect(
-        new URL(`/login?from=${encodeURIComponent(from)}`, request.url)
-      );
+      return NextResponse.redirect(loginUrl);
     }
 
     return NextResponse.next();
   } catch (error) {
     // 에러 발생 시 요청을 그대로 통과시킴 (무한 루프 방지)
-    console.error('Middleware error:', error);
+    // 개발 환경에서만 에러 로그 출력
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Middleware error:', error);
+    }
     return NextResponse.next();
   }
 }
