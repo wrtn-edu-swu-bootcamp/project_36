@@ -45,7 +45,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { dosage, frequency, startDate, notes } = body;
+    const { dosage, frequency, startDate, endDate, notes } = body;
 
     // 약물 존재 확인
     const medicine = await prisma.medicine.findUnique({
@@ -172,6 +172,7 @@ export async function POST(
         dosage: dosage || '1정',
         frequency: parseInt(frequency) || 1,
         startDate: new Date(startDate || new Date()),
+        endDate: endDate ? new Date(endDate) : null,
         notes,
         recommendedTimes: JSON.stringify(recommendedTimes),
         isActive: true,

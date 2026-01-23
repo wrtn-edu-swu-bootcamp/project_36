@@ -29,6 +29,8 @@ interface AddMedicineDialogProps {
 export default function AddMedicineDialog({ medicine, onClose, onSuccess }: AddMedicineDialogProps) {
   const [dosage, setDosage] = useState('1정');
   const [frequency, setFrequency] = useState('1');
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarnings, setShowWarnings] = useState(false);
@@ -74,7 +76,8 @@ export default function AddMedicineDialog({ medicine, onClose, onSuccess }: AddM
         body: JSON.stringify({
           dosage,
           frequency: parseInt(frequency),
-          startDate: new Date().toISOString(),
+          startDate: new Date(startDate).toISOString(),
+          endDate: endDate ? new Date(endDate).toISOString() : null,
           notes,
         }),
       });
@@ -236,6 +239,26 @@ export default function AddMedicineDialog({ medicine, onClose, onSuccess }: AddM
               <option value="3">3회</option>
               <option value="4">4회</option>
             </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              id="startDate"
+              label="복용 시작일"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
+            />
+            <Input
+              id="endDate"
+              label="복용 종료일 (선택)"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate}
+              placeholder="미정"
+            />
           </div>
 
           <Input

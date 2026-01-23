@@ -193,6 +193,20 @@ export default function MyMedicinesPage() {
                     <p className="text-neutral-gray-600">복용 횟수</p>
                     <p className="font-semibold">하루 {userMedicine.frequency}회</p>
                   </div>
+                  <div>
+                    <p className="text-neutral-gray-600">복용 시작일</p>
+                    <p className="font-semibold">
+                      {new Date(userMedicine.startDate).toLocaleDateString('ko-KR')}
+                    </p>
+                  </div>
+                  {userMedicine.endDate && (
+                    <div>
+                      <p className="text-neutral-gray-600">복용 종료일</p>
+                      <p className="font-semibold">
+                        {new Date(userMedicine.endDate).toLocaleDateString('ko-KR')}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {userMedicine.recommendedTimes && userMedicine.recommendedTimes.length > 0 && (
