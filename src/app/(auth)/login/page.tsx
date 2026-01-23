@@ -39,31 +39,27 @@ function LoginForm() {
     try {
       const callbackUrl = searchParams.get('from') || '/dashboard';
       
-      // NextAuth의 signIn 호출
-      // redirect: false로 설정하여 에러 처리
+      // NextAuth signIn 호출
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
         redirect: false,
-        callbackUrl,
       });
 
       if (result?.error) {
-        // 로그인 실패
+        // 로그인 실패 - 에러 메시지 표시
         setError(result.error);
         setIsLoading(false);
       } else if (result?.ok) {
-        // 로그인 성공 - 페이지 전체 새로고침으로 확실한 리디렉션
-        window.location.replace(callbackUrl);
-      } else {
-        // 예상치 못한 응답
-        setError('로그인 처리 중 문제가 발생했습니다.');
-        setIsLoading(false);
+        // 로그인 성공 - 리디렉션
+        // router.push 사용 (Next.js 방식)
+        router.push(callbackUrl);
+        // 또는 전체 페이지 리로드가 필요한 경우
+        // window.location.href = callbackUrl;
       }
     } catch (err: any) {
-      // 예외 처리
-      const errorMessage = err?.message || '로그인 중 오류가 발생했습니다.';
-      setError(errorMessage);
+      console.error('Login error:', err);
+      setError(err?.message || '로그인 중 오류가 발생했습니다.');
       setIsLoading(false);
     }
   };

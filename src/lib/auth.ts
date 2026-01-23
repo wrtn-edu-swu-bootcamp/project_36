@@ -1,11 +1,9 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import prisma from './prisma';
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -47,45 +45,23 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login',
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (token && session.user) {
         session.user.id = token.id as string;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
       }
       return session;
-    },
-    async redirect({ url, baseUrl }) {
-      // /login 또는 /register로 리디렉션되는 경우 대시보드로
-      if (url.includes('/login') || url.includes('/register')) {
-        return `${baseUrl}/dashboard`;
-      }
-      
-      // 상대 경로인 경우 baseUrl과 결합
-      if (url.startsWith('/')) {
-        return `${baseUrl}${url}`;
-      }
-      
-      // 같은 도메인인 경우 허용
-      try {
-        const urlObj = new URL(url);
-        const baseUrlObj = new URL(baseUrl);
-        if (urlObj.origin === baseUrlObj.origin) {
-          return url;
-        }
-      } catch (e) {
-        // URL 파싱 실패 시 baseUrl로 돌아감
-      }
-      
-      // 기본값: dashboard
-      return `${baseUrl}/dashboard`;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
