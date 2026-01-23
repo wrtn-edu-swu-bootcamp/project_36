@@ -39,6 +39,8 @@ function LoginForm() {
     try {
       const from = searchParams.get('from') || '/dashboard';
       
+      console.log('로그인 시도:', { email: data.email, callbackUrl: from });
+      
       // NextAuth의 signIn 호출 (redirect: false로 에러 처리 가능)
       const result = await signIn('credentials', {
         email: data.email,
@@ -47,19 +49,24 @@ function LoginForm() {
         callbackUrl: from,
       });
 
+      console.log('로그인 결과:', result);
+
       if (result?.error) {
+        console.error('로그인 에러:', result.error);
         setError(result.error);
         setIsLoading(false);
       } else if (result?.ok) {
+        console.log('로그인 성공, 리디렉션 시작:', from);
         // 로그인 성공 - NextAuth가 세션 쿠키를 설정함
-        // 세션이 설정될 시간을 확보하기 위해 짧은 지연
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
-        // NextAuth의 기본 리디렉션처럼 동작하도록 전체 페이지 리로드
-        // 이렇게 하면 middleware가 새로운 요청에서 세션을 확인할 수 있음
+        // router.push 대신 window.location을 사용하여 확실한 페이지 리로드
         window.location.href = from;
+      } else {
+        console.error('예상치 못한 결과:', result);
+        setError('로그인 처리 중 문제가 발생했습니다.');
+        setIsLoading(false);
       }
     } catch (err: any) {
+      console.error('로그인 예외:', err);
       // 에러 메시지 처리
       const errorMessage = err?.message || '로그인 중 오류가 발생했습니다.';
       setError(errorMessage);
