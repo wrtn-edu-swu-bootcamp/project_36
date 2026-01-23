@@ -39,7 +39,11 @@ export default function SchedulePage() {
         
         result.data.forEach((userMedicine: any) => {
           if (userMedicine.recommendedTimes) {
-            const times = JSON.parse(userMedicine.recommendedTimes);
+            // recommendedTimes가 이미 배열인지 문자열인지 확인
+            const times = typeof userMedicine.recommendedTimes === 'string' 
+              ? JSON.parse(userMedicine.recommendedTimes)
+              : userMedicine.recommendedTimes;
+            
             times.forEach((time: string) => {
               scheduleList.push({
                 id: `${userMedicine.id}-${time}`,
