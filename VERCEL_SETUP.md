@@ -1,107 +1,103 @@
-# Vercel 배포 설정 가이드
+# Vercel 환경 변수 설정 가이드
 
-## 1. Vercel Postgres 생성
+## 🚀 자동 생성된 환경 변수 값
 
-1. [Vercel 대시보드](https://vercel.com/dashboard) 접속
-2. 프로젝트 선택 → **Storage** 탭
-3. **Create Database** → **Postgres** 선택
-4. 데이터베이스 이름 입력 후 생성
+아래 값들을 복사해서 Vercel에 붙여넣으세요:
 
-## 2. 환경 변수 설정
+### 1. NEXTAUTH_SECRET
+```
+vFLab7QoUOyVD34cqQ6nmsRHG6jZU9dTPXSJhMhH+60=
+```
+- **환경**: Production, Preview, Development 모두 체크 ✅
 
-Vercel Postgres를 생성하면 다음 환경 변수가 자동으로 생성됩니다:
-- `POSTGRES_PRISMA_URL` - Prisma용 연결 문자열 (pooling)
-- `POSTGRES_URL` - 일반 연결 문자열
-- `POSTGRES_URL_NON_POOLING` - 직접 연결용
+### 2. NEXTAUTH_URL
+```
+https://project-36-7m7s-ic3lm0eoh-sooins-projects-4b973337.vercel.app
+```
+- **환경**: Production만 체크 ✅
 
-### 필수 환경 변수 추가
+### 3. DATABASE_URL
+- **Vercel 대시보드 → Storage 탭**에서 확인
+- Postgres 데이터베이스 클릭
+- **Connect** 버튼 → `.env.local` 탭
+- `POSTGRES_PRISMA_URL` 값을 복사
+- **환경**: Production, Preview, Development 모두 체크 ✅
 
-**Settings** → **Environment Variables**에서 다음을 추가/수정:
+---
 
-| 변수명 | 값 | 설명 |
-|--------|-----|------|
-| `DATABASE_URL` | `$POSTGRES_PRISMA_URL` | Prisma가 사용할 연결 문자열 |
-| `NEXTAUTH_URL` | `https://your-domain.vercel.app` | 실제 배포 도메인으로 변경 |
-| `NEXTAUTH_SECRET` | `openssl rand -base64 32` 실행 결과 | 인증용 시크릿 키 |
+## 📋 단계별 설정 방법
 
-### 환경 변수 설정 방법
+### Step 1: Vercel 대시보드 접속
+1. 브라우저에서 https://vercel.com/dashboard 열기
+2. 프로젝트 선택 (project_36)
 
-1. Vercel 대시보드 → 프로젝트 → **Settings** → **Environment Variables**
-2. **Add New** 클릭
-3. `DATABASE_URL` 추가:
-   - **Key**: `DATABASE_URL`
-   - **Value**: `$POSTGRES_PRISMA_URL` (다른 변수 참조)
-   - 또는 직접 `POSTGRES_PRISMA_URL`의 값을 복사해서 붙여넣기
-4. `NEXTAUTH_URL` 추가 (Production, Preview, Development 모두)
-5. `NEXTAUTH_SECRET` 추가 (Production, Preview, Development 모두)
+### Step 2: 환경 변수 메뉴로 이동
+1. **Settings** 탭 클릭
+2. 왼쪽 메뉴에서 **Environment Variables** 클릭
 
-## 3. 데이터베이스 스키마 적용
+### Step 3: 환경 변수 추가
 
-### 방법 1: Vercel CLI 사용 (권장)
+#### NEXTAUTH_SECRET 추가
+1. **Add New** 버튼 클릭
+2. **Name**: `NEXTAUTH_SECRET`
+3. **Value**: `vFLab7QoUOyVD34cqQ6nmsRHG6jZU9dTPXSJhMhH+60=`
+4. **Environments**: Production ✅ Preview ✅ Development ✅
+5. **Save** 클릭
 
-```bash
-# Vercel CLI 설치 (없는 경우)
-npm i -g vercel
+#### NEXTAUTH_URL 추가
+1. **Add New** 버튼 클릭
+2. **Name**: `NEXTAUTH_URL`
+3. **Value**: `https://project-36-7m7s-ic3lm0eoh-sooins-projects-4b973337.vercel.app`
+4. **Environments**: Production ✅
+5. **Save** 클릭
 
-# Vercel 로그인
-vercel login
+#### DATABASE_URL 추가
+1. 상단 메뉴에서 **Storage** 탭 클릭
+2. Postgres 데이터베이스 선택
+3. **Connect** 버튼 클릭
+4. `.env.local` 탭 선택
+5. `POSTGRES_PRISMA_URL` 값 복사
+6. 다시 **Settings** → **Environment Variables**로 이동
+7. **Add New** 버튼 클릭
+8. **Name**: `DATABASE_URL`
+9. **Value**: [복사한 Postgres URL]
+10. **Environments**: Production ✅ Preview ✅ Development ✅
+11. **Save** 클릭
 
-# 프로젝트 연결
-vercel link
+### Step 4: Redeploy
+1. **Deployments** 탭으로 이동
+2. 최신 배포의 **...** (점 3개) 클릭
+3. **Redeploy** 선택
+4. **Redeploy** 버튼 클릭
 
-# 환경 변수 가져오기
-vercel env pull .env.local
-
-# Prisma 클라이언트 생성
-npx prisma generate
-
-# 스키마 적용
-npx prisma db push
-
-# 시드 데이터 추가 (선택사항)
-npm run db:seed
+### Step 5: 확인
+배포 완료 후 (1-2분) 다음 URL로 환경 변수 확인:
+```
+https://project-36-7m7s-ic3lm0eoh-sooins-projects-4b973337.vercel.app/api/health
 ```
 
-### 방법 2: Vercel 대시보드에서 직접
+모든 환경 변수가 ✅로 표시되어야 합니다.
 
-1. Vercel 대시보드 → 프로젝트 → **Storage** → Postgres 선택
-2. **.env.local** 탭에서 연결 문자열 복사
-3. 로컬에서 `.env.local` 파일 생성 후 붙여넣기
-4. 위의 명령어 실행
+---
 
-## 4. 재배포
+## 🎯 빠른 체크리스트
 
-환경 변수를 설정한 후:
+- [ ] NEXTAUTH_SECRET 추가 (모든 환경)
+- [ ] NEXTAUTH_URL 추가 (Production만)
+- [ ] DATABASE_URL 추가 (모든 환경)
+- [ ] Redeploy 실행
+- [ ] /api/health에서 확인
+- [ ] 로그인 테스트
 
-```bash
-git add .
-git commit -m "fix: configure PostgreSQL for Vercel"
-git push
-```
+---
 
-또는 Vercel 대시보드에서 **Deployments** → **Redeploy** 클릭
+## 🆘 문제 해결
 
-## 5. 문제 해결
+### "Server error" 계속 발생
+→ Vercel 대시보드 → Deployments → 최근 배포 → Runtime Logs 확인
 
-### 빌드 에러: "Prisma Client not generated"
+### DATABASE_URL 찾을 수 없음
+→ Storage 탭에서 Postgres 데이터베이스 생성 필요
 
-**해결책**: `vercel.json`이 올바르게 설정되어 있는지 확인
-
-### 연결 에러: "Can't reach database server"
-
-**해결책**: 
-1. `DATABASE_URL`이 `$POSTGRES_PRISMA_URL`로 설정되어 있는지 확인
-2. 또는 `POSTGRES_PRISMA_URL`의 실제 값을 복사해서 `DATABASE_URL`에 설정
-
-### 인증 에러: "NEXTAUTH_SECRET is missing"
-
-**해결책**: 
-- 터미널에서 `openssl rand -base64 32` 실행
-- 결과를 `NEXTAUTH_SECRET` 환경 변수로 추가
-
-## 6. 확인
-
-배포가 완료되면:
-1. 배포된 사이트 접속
-2. "시작하기" 버튼 클릭 → 로그인 페이지로 이동하는지 확인
-3. 회원가입/로그인 테스트
+### 환경 변수 추가했는데 적용 안 됨
+→ 반드시 Redeploy 해야 적용됩니다!
