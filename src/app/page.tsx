@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
@@ -13,9 +15,9 @@ export default function Home() {
 
           {/* CTA Button */}
           <div className="flex gap-4 justify-center mb-20">
-            <a href="/login" className="btn-primary btn-lg">
+            <Link href="/login" className="btn-primary btn-lg">
               시작하기
-            </a>
+            </Link>
             <a href="#features" className="btn-outline btn-lg">
               더 알아보기
             </a>
