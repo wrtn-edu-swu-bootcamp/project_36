@@ -37,37 +37,31 @@ function LoginForm() {
     setError('');
 
     try {
-      const from = searchParams.get('from') || '/dashboard';
+      const callbackUrl = searchParams.get('from') || '/dashboard';
       
-      console.log('로그인 시도:', { email: data.email, callbackUrl: from });
-      
-      // NextAuth의 signIn 호출 (redirect: false로 에러 처리 가능)
+      // NextAuth의 signIn 호출
+      // redirect: false로 설정하여 에러 처리
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
         redirect: false,
-        callbackUrl: from,
+        callbackUrl,
       });
 
-      console.log('로그인 결과:', result);
-
       if (result?.error) {
-        console.error('로그인 에러:', result.error);
+        // 로그인 실패
         setError(result.error);
         setIsLoading(false);
       } else if (result?.ok) {
-        console.log('로그인 성공, 리디렉션 시작:', from);
-        // 로그인 성공 - NextAuth가 세션 쿠키를 설정함
-        // router.push 대신 window.location을 사용하여 확실한 페이지 리로드
-        window.location.href = from;
+        // 로그인 성공 - 페이지 전체 새로고침으로 확실한 리디렉션
+        window.location.replace(callbackUrl);
       } else {
-        console.error('예상치 못한 결과:', result);
+        // 예상치 못한 응답
         setError('로그인 처리 중 문제가 발생했습니다.');
         setIsLoading(false);
       }
     } catch (err: any) {
-      console.error('로그인 예외:', err);
-      // 에러 메시지 처리
+      // 예외 처리
       const errorMessage = err?.message || '로그인 중 오류가 발생했습니다.';
       setError(errorMessage);
       setIsLoading(false);
