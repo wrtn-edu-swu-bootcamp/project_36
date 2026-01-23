@@ -5,8 +5,22 @@ import { getToken } from 'next-auth/jwt';
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  // API 라우트와 홈페이지는 middleware를 건너뜀
-  if (pathname.startsWith('/api/') || pathname === '/') {
+  // API 라우트, 홈페이지, 정적 파일은 middleware를 건너뜀
+  if (
+    pathname.startsWith('/api/') || 
+    pathname === '/' ||
+    pathname.startsWith('/_next/') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next();
+  }
+
+  // 인증 관련 페이지 정의
+  const publicPages = ['/login', '/register'];
+  const isPublicPage = publicPages.some(page => pathname.startsWith(page));
+  
+  // 공개 페이지는 항상 접근 허용 (무한 루프 방지)
+  if (isPublicPage) {
     return NextResponse.next();
   }
 
@@ -17,23 +31,9 @@ export async function middleware(request: NextRequest) {
     });
 
     const isAuth = !!token;
-    const isAuthPage = pathname.startsWith('/login') || 
-                       pathname.startsWith('/register');
 
-    // 인증 페이지(/login, /register)인 경우
-    if (isAuthPage) {
-      // 이미 로그인된 사용자는 dashboard로 리디렉션
-      if (isAuth) {
-        const dashboardUrl = new URL('/dashboard', request.url);
-        return NextResponse.redirect(dashboardUrl);
-      }
-      // 로그인 안 된 사용자는 접근 허용
-      return NextResponse.next();
-    }
-
-    // 보호된 페이지인 경우
+    // 보호된 페이지인데 인증되지 않은 경우
     if (!isAuth) {
-      // 로그인 안 된 사용자는 로그인 페이지로 리디렉션
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('from', pathname);
       if (request.nextUrl.search) {

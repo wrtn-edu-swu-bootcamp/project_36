@@ -63,16 +63,29 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      // /login 또는 /register로 리디렉션되는 경우 대시보드로
+      if (url.includes('/login') || url.includes('/register')) {
+        return `${baseUrl}/dashboard`;
+      }
+      
       // 상대 경로인 경우 baseUrl과 결합
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`;
       }
+      
       // 같은 도메인인 경우 허용
-      if (new URL(url).origin === baseUrl) {
-        return url;
+      try {
+        const urlObj = new URL(url);
+        const baseUrlObj = new URL(baseUrl);
+        if (urlObj.origin === baseUrlObj.origin) {
+          return url;
+        }
+      } catch (e) {
+        // URL 파싱 실패 시 baseUrl로 돌아감
       }
-      // 기본값: baseUrl
-      return baseUrl;
+      
+      // 기본값: dashboard
+      return `${baseUrl}/dashboard`;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
